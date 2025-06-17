@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Autonomous Inventory Optimization System</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .header h1 {
+            color: #2c3e50;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header p {
+            color: #7f8c8d;
+            font-size: 1.1em;
+        }
+
+        .system-controls {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .system-status {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .status-indicator {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #e74c3c;
+            animation: pulse 2s infinite;
+        }
+
+        .status-indicator.running {
+            background: #2ecc71;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        .control-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, #2ecc71, #27ae60);
+            color: white;
+        }
+
+        .btn-danger {
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+            color: white;
+        }
+
+        .btn-info {
+            background: linear-gradient(45deg, #3498db, #2980b9);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card h3 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #ecf0f1;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+
+        .agents-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+        }
+
+        .agent-card {
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            border-radius: 12px;
+            padding: 20px;
+            border-left: 5px solid #667eea;
+            transition: all 0.3s ease;
+        }
+
+        .agent-card:hover {
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+            transform: translateX(5px);
+        }
+
+        .agent-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .agent-name {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .agent-status {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .agent-status.running {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .agent-status.stopped {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .metric-card {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .metric-value {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .metric-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+
+        .inventory-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        .inventory-table th,
+        .inventory-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ecf0f1;
+        }
+
+        .inventory-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .inventory-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .stock-level {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+
+        .stock-high {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .stock-medium {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .stock-low {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .log-container {
+            max-height: 300px;
+            overflow-y: auto;
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+
+        .log-entry {
+            margin-bottom: 8px;
+            padding: 5px;
+            border-radius: 4px;
+        }
+
+        .log-info {
+            background: rgba(52, 152, 219, 0.2);
+        }
+
+        .log-warning {
+            background: rgba(241, 196, 15, 0.2);
+        }
+
+        .log-error {
+            background: rgba(231, 76, 60, 0.2);
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-top: 20px;
+        }
+
+        .message-flow {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .message {
+            background: linear-gradient(135deg, #e8f4fd, #d3e8f8);
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #3498db;
+        }
+
+        .message-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .message-content {
+            color: #2c3e50;
+            font-size: 0.9em;
+        }
+
+        .recommendations {
+            list-style: none;
+        }
+
+        .recommendations li {
+            padding: 10px;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, #fff8e1, #ffe0b2);
+            border-radius: 8px;
+            border-left: 4px solid #ff9800;
+        }
+
+        .footer {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            margin-top: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .system-controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .control-buttons {
+                justify-content: center;
+            }
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🤖 Autonomous Inventory Optimization System</h1>
+            <p>AI-Powered Supply Chain Management with Multi-Agent Coordination</p>
+        </div>
+
+        <!-- System Controls -->
+        <div class="system-controls">
+            <div class="system-status">
+                <div class="status-indicator" id="systemStatus"></div>
+                <span id="statusText">System Stopped</span>
+                <span id="uptime">Uptime: 00:00:00</span>
+            </div>
+            <div class="control-buttons">
+                <button class="btn btn-primary" id="startBtn" onclick="startSystem()">
+                    <span id="startBtnText">Start System</span>
+                </button>
+                <button class="btn btn-danger" id="stopBtn" onclick="stopSystem()" disabled>
+                    Stop System
+                </button>
+                <button class="btn btn-info" onclick="generateReport()">
+                    Generate Report
+                </button>
+            </div>
+        </div>
+
+        <!-- Dashboard Grid -->
+        <div class="dashboard-grid">
+            <!-- System Metrics -->
+            <div class="card">
+                <h3>
+                    <div class="card-icon" style="background: #3498db;">📊</div>
+                    System Performance Metrics
+                </h3>
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-value" id="forecastAccuracy">87%</div>
+                        <div class="metric-label">Forecast Accuracy</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value" id="costReduction">23%</div>
+                        <div class="metric-label">Cost Reduction</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value" id="stockoutReduction">45%</div>
+                        <div class="metric-label">Stockout Reduction</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value" id="responseTime">0.8s</div>
+                        <div class="metric-label">Response Time</div>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="performanceChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Agent Status -->
+            <div class="card">
+                <h3>
+                    <div class="card-icon" style="background: #2ecc71;">🤖</div>
+                    Multi-Agent System Status
+                </h3>
+                <div class="agents-grid" id="agentsGrid">
+                    <!-- Agents will be populated by JavaScript -->
+                </div>
+            </div>
+
+            <!-- Inventory Status -->
+            <div class="card">
+                <h3>
+                    <div class="card-icon" style="background: #e67e22;">📦</div>
+                    Current Inventory Status
+                </h3>
+                <table class="inventory-table" id="inventoryTable">
+                    <thead>
+                        <tr>
+                            <th>SKU</th>
+                            <th>Product</th>
+                            <th>Current Stock</th>
+                            <th>Reorder Point</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Inventory data will be populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Demand Forecasting -->
+            <div class="card">
+                <h3>
+                    <div class="card-icon" style="background: #9b59b6;">📈</div>
+                    Demand Forecasting
+                </h3>
+                <div class="chart-container">
+                    <canvas id="demandChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Message Flow -->
+            <div class="card">
+                <h3>
+                    <div class="card-icon" style="background: #e74c3c;">💬</div>
+                    Inter-Agent Communication
+                </h3>
+                <div class="message-flow" id="messageFlow">
+                    <!-- Messages will be populated by JavaScript -->
+                </div>
+            </div>
+
+            <!-- Recommendations -->
+            <div class="card">
+                <h3>
+                    <div class="card-icon" style="background: #f39c12;">💡</div>
+                    System Recommendations
+                </h3>
+                <ul class="recommendations" id="recommendations">
+                    <!-- Recommendations will be populated by JavaScript -->
+                </ul>
+            </div>
+
+            <!-- System Logs -->
+            <div class="card">
+                <h3>
+                    <div class="card-icon" style="background: #34495e;">📝</div>
+                    System Logs
+                </h3>
+                <div class="log-container" id="systemLogs">
+                    <!-- Logs will be populated by JavaScript -->
+                </div>
+            </div>
+
+            <!-- ABC Classification -->
+            <div class="card">
+                <h3>
+                    <div class="card-icon" style="background: #16a085;">🏷️</div>
+                    ABC/XYZ Classification
+                </h3>
+                <div class="chart-container">
+                    <canvas id="classificationChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p>&copy; 2024 Autonomous Inventory Optimization System | Powered by Multi-Agent AI Technology</p>
+        </div>
+    </div>
+
+    <script>
+        // System state
+        let systemRunning = false;
+        let startTime = null;
+        let uptimeInterval = null;
+
+        // Sample data
+        const agents = [
+            { id: 'demand_forecasting_agent', name: 'Demand Forecasting Agent', status: 'stopped', model: 'Random Forest', accuracy: '87%' },
+            { id: 'stock_monitoring_agent', name: 'Stock Level Monitoring Agent', status: 'stopped', model: 'Rule-based + Anomaly Detection', accuracy: '95%' },
+            { id: 'reorder_point_agent', name: 'Reorder Point Agent', status: 'stopped', model: 'Mathematical Formula', accuracy: '92%' },
+            { id: 'inventory_allocation_agent', name: 'Inventory Allocation Agent', status: 'stopped', model: 'Multi-objective Optimization', accuracy: '89%' },
+            { id: 'seasonal_adjustment_agent', name: 'Seasonal Adjustment Agent', status: 'stopped', model: 'Pattern Recognition', accuracy: '85%' },
+            { id: 'abc_classification_agent', name: 'ABC Classification Agent', status: 'stopped', model: 'Statistical Analysis', accuracy: '94%' },
+            { id: 'safety_stock_agent', name: 'Safety Stock Optimization Agent', status: 'stopped', model: 'Service Level Theory', accuracy: '91%' }
+        ];
+
+        const products = [
+            { sku: 'SKU001', name: 'Laptop Pro', currentStock: 127, reorderPoint: 85, status: 'high' },
+            { sku: 'SKU002', name: 'Wireless Mouse', currentStock: 45, reorderPoint: 50, status: 'low' },
+            { sku: 'SKU003', name: 'Office Chair', currentStock: 23, reorderPoint: 30, status: 'low' },
+            { sku: 'SKU004', name: 'Coffee Maker', currentStock: 78, reorderPoint: 60, status: 'high' },
+            { sku: 'SKU005', name: 'Desk Lamp', currentStock: 34, reorderPoint: 40, status: 'medium' }
+        ];
+
+        let charts = {};
+
+        // Initialize the dashboard
+        function initializeDashboard() {
+            renderAgents();
+            renderInventoryTable();
+            initializeCharts();
+            startRealTimeUpdates();
+            addInitialLogs();
+            addInitialMessages();
+            addInitialRecommendations();
+        }
+
+        // System control functions
+        function startSystem() {
+            if (systemRunning) return;
+            
+            systemRunning = true;
+            startTime = new Date();
+            
+            // Update UI
+            document.getElementById('systemStatus').classList.add('running');
+            document.getElementById('statusText').textContent = 'System Running';
+            document.getElementById('startBtn').disabled = true;
+            document.getElementById('startBtnText').innerHTML = '<div class="loading"></div> Starting...';
+            document.getElementById('stopBtn').disabled = false;
+            
+            // Start agents with delay
+            setTimeout(() => {
+                agents.forEach((agent, index) => {
+                    setTimeout(() => {
+                        agent.status = 'running';
+                        renderAgents();
+                        addLog(`Agent ${agent.name} started successfully`, 'info');
+                    }, index * 500);
+                });
+                
+                document.getElementById('startBtnText').textContent = 'Start System';
+                
+                // Start uptime counter
+                uptimeInterval = setInterval(updateUptime, 1000);
+                
+                addLog('All agents started successfully! System is now operational.', 'info');
+            }, 1000);
+        }
+
+        function stopSystem() {
+            if (!systemRunning) return;
+            
+            systemRunning = false;
+            
+            // Update UI
+            document.getElementById('systemStatus').classList.remove('running');
+            document.getElementById('statusText').textContent = 'System Stopped';
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('stopBtn').disabled = true;
+            document.getElementById('uptime').textContent = 'Uptime: 00:00:00';
+            
+            // Stop agents
+            agents.forEach(agent => {
+                agent.status = 'stopped';
+            });
+            renderAgents();
+            
+            // Clear uptime interval
+            if (uptimeInterval) {
+                clearInterval(uptimeInterval);
+                uptimeInterval = null;
+            }
+            
+            addLog('System stopped by user', 'warning');
+        }
+
+        function updateUptime() {
+            if (!startTime) return;
+            
+            const now = new Date();
+            const diff = now - startTime;
+            const hours = Math.floor(diff / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+            
+            document.getElementById('uptime').textContent = 
+                `Uptime: ${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        // Render functions
+        function renderAgents() {
+            const agentsGrid = document.getElementById('agentsGrid');
+            agentsGrid.innerHTML = '';
+            
+            agents.forEach(agent => {
+                const agentCard = document.createElement('div');
+                agentCard.className = 'agent-card';
+                agentCard.innerHTML = `
+                    <div class="agent-header">
+                        <div class="agent-name">${agent.name}</div>
+                        <div class="agent-status ${agent.status}">${agent.status}</div>
+                    </div>
+                    <div style="font-size: 0.9em; color: #7f8c8d;">
+                        <div><strong>Model:</strong> ${agent.model}</div>
+                        <div><strong>Accuracy:</strong> ${agent.accuracy}</div>
+                        <div><strong>Queue:</strong> ${Math.floor(Math.random() * 10)} messages</div>
+                    </div>
+                `;
+                agentsGrid.appendChild(agentCard);
+            });
+        }
+
+        function renderInventoryTable() {
+            const tableBody = document.querySelector('#inventoryTable tbody');
+            tableBody.innerHTML = '';
+            
+            products.forEach(product => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${product.sku}</td>
+                    <td>${product.name}</td>
+                    <td>${product.currentStock}</td>
+                    <td>${product.reorderPoint}</td>
+                    <td><span class="stock-level stock-${product.status}">${product.status.toUpperCase()}</span></td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        // Chart initialization
+        function initializeCharts() {
+            // Performance Chart
+            const performanceCtx = document.getElementById('performanceChart').getContext('2d');
+            charts.performance = new Chart(performanceCtx, {
+                type: 'line',
+                data: {
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                    datasets: [{
+                        label: 'Forecast Accuracy (%)',
+                        data: [75, 78, 82, 85, 87, 89],
+                        borderColor: '#3498db',
+                        backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                        tension: 0.4
+                    }, {
+                        label: 'Cost Reduction (%)',
+                        data: [10, 13, 17, 20, 23, 25],
+                        borderColor: '#2ecc71',
+                        backgroundColor: 'rgba(46, 204, 113, 0.1)',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100
+                        }
+                    }
+                }
+            });
+
+            // Demand Forecast Chart
+            const demandCtx = document.getElementById('demandChart').getContext('2d');
+            charts.demand = new Chart(demandCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+                    datasets: [{
+                        label: 'Predicted Demand',
+                        data: [120, 145, 132, 156],
+                        backgroundColor: 'rgba(155, 89, 182, 0.8)'
+                    }, {
+                        label: 'Actual Demand',
+                        data: [115, 142, 128, 160],
+                        backgroundColor: 'rgba(52, 152, 219, 0.8)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+
+            // ABC Classification Chart
+            const classificationCtx = document.getElementById('classificationChart').getContext('2d');
+            charts.classification = new Chart(classificationCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Class A (High Value)', 'Class B (Medium Value)', 'Class C (Low Value)'],
+                    datasets: [{
+                        data: [20, 30, 50],
+                        backgroundColor: ['#e74c3c', '#f39c12', '#2ecc71']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+        }
+
+        // Real-time updates
+        function startRealTimeUpdates() {
+            setInterval(() => {
+                if (systemRunning) {
+                    updateMetrics();
+                    updateCharts();
+                    simulateMessages();
+                }
+            }, 5000);
+        }
+
+        function updateMetrics() {
+            // Simulate metric updates
+            const accuracy = Math.floor(Math.random() * 5) + 85;
+            const costReduction = Math.floor(Math.random() * 8) + 20;
+            const stockoutReduction = Math.floor(Math.random() * 10) + 40;
+            const responseTime = (Math.random() * 0.5 + 0.5).toFixed(1);
+            
+            document.getElementById('forecastAccuracy').textContent = accuracy + '%';
+            document.getElementById('costReduction').textContent = costReduction + '%';
+            document.getElementById('stockoutReduction').textContent = stockoutReduction + '%';
+            document.getElementById('responseTime').textContent = responseTime + 's';
+        }
+
+        function updateCharts() {
+            // Update performance chart with new data
+            const newAccuracy = Math.floor(Math.random() * 5) + 85;
+            const newCostReduction = Math.floor(Math.random() * 8) + 20;
+            
+            charts.performance.data.datasets[0].data.push(newAccuracy);
+            charts.performance.data.datasets[1].data.push(newCostReduction);
+            charts.performance.data.labels.push('Now');
+            
+            // Keep only last 10 data points
+            if (charts.performance.data.labels.length > 10) {
+                charts.performance.data.labels.shift();
+                charts.performance.data.datasets[0].data.shift();
+                charts.performance.data.datasets[1].data.shift();
+            }
+            
+            charts.performance.update();
+        }
+
+        function simulateMessages() {
+            const messageTypes = [
+                'DEMAND_UPDATE', 'INVENTORY_STATUS', 'REORDER_ALERT', 
+                'ALLOCATION_REQUEST', 'SEASONAL_ADJUSTMENT', 'ABC_UPDATE'
+            ];
+            
+            const senders = ['demand_forecasting_agent', 'stock_monitoring_agent', 'reorder_point_agent'];
+            const receivers = ['inventory_allocation_agent', 'safety_stock_agent', 'abc_classification_agent'];
+            
+            if (Math.random() > 0.7) { // 30% chance to add message
+                const messageType = messageTypes[Math.floor(Math.random() * messageTypes.length)];
+                const sender = senders[Math.floor(Math.random() * senders.length)];
+                const receiver = receivers[Math.floor(Math.random() * receivers.length)];
+                
+                addMessage(sender, receiver, messageType, `Processing ${messageType.toLowerCase().replace('_', ' ')}`);
+            }
+        }
+
+        // Utility functions
+        function addLog(message, type = 'info') {
+            const logsContainer = document.getElementById('systemLogs');
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry log-${type}`;
+            logEntry.textContent = `[${timestamp}] ${message}`;
+            
+            logsContainer.appendChild(logEntry);
+            logsContainer.scrollTop = logsContainer.scrollHeight;
+            
+            // Keep only last 50 logs
+            const logs = logsContainer.children;
+            if (logs.length > 50) {
+                logsContainer.removeChild(logs[0]);
+            }
+        }
+
+        function addMessage(sender, receiver, type, content) {
+            const messageFlow = document.getElementById('messageFlow');
+            const message = document.createElement('div');
+            message.className = 'message';
+            message.innerHTML = `
+                <div class="message-header">
+                    <span>${sender} → ${receiver}</span>
+                    <span>${new Date().toLocaleTimeString()}</span>
+                </div>
+                <div class="message-content">
+                    <strong>${type}:</strong> ${content}
+                </div>
+            `;
+            
+            messageFlow.insertBefore(message, messageFlow.firstChild);
+            
+            // Keep only last 10 messages
+            if (messageFlow.children.length > 10) {
+                messageFlow.removeChild(messageFlow.lastChild);
+            }
+        }
+
+        function addInitialMessages() {
+            addMessage('demand_forecasting_agent', 'all', 'DEMAND_UPDATE', 'Broadcasting demand forecast for SKU001: 7-day average = 45.2 units');
+            addMessage('stock_monitoring_agent', 'reorder_point_agent', 'REORDER_ALERT', 'SKU002 stock level (45) below reorder point (50)');
+            addMessage('reorder_point_agent', 'inventory_allocation_agent', 'ALLOCATION_REQUEST', 'Recommend ordering 280 units of SKU002');
+        }
+
+        function addInitialRecommendations() {
+            const recommendations = [
+                'SKU002 (Wireless Mouse) requires immediate reordering - current stock below safety level',
+                'SKU003 (Office Chair) showing seasonal demand increase - consider adjusting safety stock',
+                'Supplier "Fast Supplier" showing 98% reliability - prioritize for urgent orders',
+                'Class A products showing 12% higher than forecast demand - review pricing strategy'
+            ];
+            
+            const recommendationsContainer = document.getElementById('recommendations');
+            recommendations.forEach(rec => {
+                const li = document.createElement('li');
+                li.textContent = rec;
+                recommendationsContainer.appendChild(li);
+            });
+        }
+
+        function addInitialLogs() {
+            addLog('System initialized with 7 autonomous agents', 'info');
+            addLog('Historical data loaded: 90 days for 5 products', 'info');
+            addLog('Machine learning models ready for deployment', 'info');
+        }
+
+        function generateReport() {
+            addLog('Generating comprehensive system report...', 'info');
+            setTimeout(() => {
+                addLog('Report generated successfully - saved to reports/inventory_report_' + new Date().toISOString().split('T')[0] + '.pdf', 'info');
+                alert('Report generated successfully! Check system logs for details.');
+            }, 2000);
+        }
+
+        // Initialize the dashboard when page loads
+        document.addEventListener('DOMContentLoaded', initializeDashboard);
+    </script>
+</body>
+</html>
